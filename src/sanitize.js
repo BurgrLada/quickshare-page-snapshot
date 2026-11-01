@@ -1,7 +1,7 @@
 const SECRET_META = /csrf|xsrf|token|nonce/i;
 
 function strip(doc) {
-  doc.querySelectorAll("script, input[type='hidden']").forEach(el => el.remove());
+  doc.querySelectorAll("script, input[type='hidden'], [data-quickshare-toast]").forEach(el => el.remove());
   doc.querySelectorAll("input[type='password']").forEach(el => el.removeAttribute("value"));
   doc.querySelectorAll("meta[name]").forEach(el => {
     if (SECRET_META.test(el.getAttribute("name"))) el.remove();

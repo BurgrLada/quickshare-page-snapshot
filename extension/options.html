@@ -7,11 +7,14 @@
   label { display: block; margin-bottom: 12px; }
   input { display: block; width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 4px; }
   #status { margin-left: 8px; }
+  pre { max-height: 240px; overflow: auto; white-space: pre-wrap; font-size: 12px; }
 </style>
 <form id="form">
   <label>Worker URL <input id="endpoint" type="url" required placeholder="https://share.example.com"></label>
   <label>Token <input id="token" type="password" required></label>
   <button>Save</button><span id="status" role="status"></span>
 </form>
+<h2>Last activity</h2>
+<pre id="log"></pre>
 <script type="module" src="options.js"></script>
 </html>

@@ -1,4 +1,5 @@
 const ID_BYTES = 16;
+const EXTENSION_ORIGIN_PREFIX = "chrome-extension://";
 const ID_PATTERN = /^\/([A-Za-z0-9_-]{22})$/;
 
 // Snapshots are third-party markup on our origin: no scripts, no indexing, no referrer leaks.
@@ -10,6 +11,26 @@ const VIEW_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "Cache-Control": "private, max-age=300"
 };
+
+function withCors(request, response) {
+  const origin = request.headers.get("Origin");
+  if (!origin?.startsWith(EXTENSION_ORIGIN_PREFIX)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Access-Control-Allow-Origin", origin);
+  headers.append("Vary", "Origin");
+  return new Response(response.body, { status: response.status, headers });
+}
+
+function preflight() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Methods": "POST",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Page-Title",
+      "Access-Control-Max-Age": "86400"
+    }
+  });
+}
 
 function newId() {
   const bytes = crypto.getRandomValues(new Uint8Array(ID_BYTES));
@@ -43,9 +64,15 @@ export default {
     const url = new URL(request.url);
     if (!env.UPLOAD_TOKEN) return new Response("UPLOAD_TOKEN is not set", { status: 500 });
 
+    if (url.pathname === "/api/pages" && request.method === "OPTIONS") {
+      return withCors(request, preflight());
+    }
+
     if (url.pathname === "/api/pages" && request.method === "POST") {
-      if (!(await isAuthorized(request, env))) return new Response("Unauthorized", { status: 401 });
-      return create(request, env, url.origin);
+      const response = (await isAuthorized(request, env))
+        ? await create(request, env, url.origin)
+        : new Response("Unauthorized", { status: 401 });
+      return withCors(request, response);
     }
 
     const id = url.pathname.match(ID_PATTERN)?.[1];

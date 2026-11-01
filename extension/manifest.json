@@ -3,7 +3,7 @@
   "name": "QuickShare Page Snapshot",
   "version": "0.1.0",
   "description": "Upload a snapshot of the current page in one click and copy a shareable link.",
-  "permissions": ["scripting", "storage", "offscreen"],
+  "permissions": ["scripting", "storage", "offscreen", "tabs", "clipboardWrite"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {

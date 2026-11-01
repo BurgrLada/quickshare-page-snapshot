@@ -29,7 +29,7 @@ const crossOrigin = createServer((_req, res) => res.writeHead(200, { "content-ty
 
 const dir = mkdtempSync(join(tmpdir(), "quickshare-"));
 writeFileSync(join(dir, ".dev.vars"), `UPLOAD_TOKEN=${TOKEN}\n`);
-const wrangler = spawn("npx", ["wrangler", "dev", "--config", "worker/wrangler.toml", "--port", "8799", "--env-file", join(dir, ".dev.vars"), "--persist-to", join(dir, "r2")], { stdio: "pipe", detached: true });
+const wrangler = spawn("pnpm", ["exec", "wrangler", "dev", "--config", "worker/wrangler.toml", "--port", "8799", "--env-file", join(dir, ".dev.vars"), "--persist-to", join(dir, "r2")], { stdio: "pipe", detached: true });
 
 async function waitFor(check, label, ms = 60000) {
   const end = Date.now() + ms;
@@ -78,6 +78,15 @@ try {
   };
 
   const url = await share();
+  const toastText = await sw.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => globalThis.__quickshareToast?.box.textContent
+    });
+    return result;
+  });
+  assert.equal(toastText, `×Link copied to clipboard${url}`);
   console.log("odkaz:", url);
   const response = await fetch(url);
   const html = await response.text();
@@ -105,6 +114,12 @@ try {
   await viewer.screenshot({ path: join(dir, "view.png") });
 
   assert.equal((await fetch(`${WORKER}/api/pages`, { method: "POST", body: "x" })).status, 401);
+  const extensionOrigin = "chrome-extension://abc";
+  const allowed = await fetch(`${WORKER}/api/pages`, { method: "OPTIONS", headers: { Origin: extensionOrigin } });
+  assert.equal(allowed.status, 204);
+  assert.equal(allowed.headers.get("access-control-allow-origin"), extensionOrigin);
+  const foreign = await fetch(`${WORKER}/api/pages`, { method: "OPTIONS", headers: { Origin: "https://evil.example" } });
+  assert.equal(foreign.headers.get("access-control-allow-origin"), null);
   assert.equal((await fetch(url, { method: "DELETE" })).status, 401);
   assert.equal((await fetch(url, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` } })).status, 204);
   assert.equal((await fetch(url)).status, 404);

@@ -15,5 +15,14 @@
     "puppeteer": "^25.16.0",
     "single-file-core": "^1.8.0",
     "wrangler": "^4.156.0"
+  },
+  "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "puppeteer",
+      "sharp",
+      "workerd"
+    ]
   }
 }

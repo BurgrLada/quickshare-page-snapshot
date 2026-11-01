@@ -3,6 +3,9 @@ import { getPageData, init } from "single-file-core/single-file.js";
 import { stripSecrets } from "./sanitize.js";
 
 const CHUNK_CHARS = 16 * 1024 * 1024;
+const LOGGED_EVENTS = new Set(["page-loading", "page-loaded", "resources-initialized", "page-ended"]);
+const HEARTBEAT_MS = 10_000;
+const RESOURCE_TIMEOUT_MS = 30_000;
 
 const OPTIONS = {
   removeHiddenElements: true,
@@ -38,7 +41,7 @@ function base64ToBytes(base64) {
 // Pages cannot read cross-origin assets because of CORS, so the worker refetches those.
 async function fetchResource(url, options = {}) {
   try {
-    const response = await fetch(url, { cache: "force-cache", credentials: "include" });
+    const response = await fetch(url, { cache: "force-cache", credentials: "include", signal: AbortSignal.timeout(RESOURCE_TIMEOUT_MS) });
     if (response.ok) return response;
   } catch {
     // Fall through to the extension context, which has host permissions.
@@ -57,8 +60,13 @@ async function fetchResource(url, options = {}) {
 chrome.runtime.onConnect.addListener(port => {
   if (port.name !== "capture") return;
   port.onMessage.addListener(async () => {
+    // Without traffic the browser stops the service worker after 30 s and the port dies with it.
+    const heartbeat = setInterval(() => port.postMessage({ heartbeat: true }), HEARTBEAT_MS);
     try {
-      const page = await getPageData(OPTIONS, { fetch: fetchResource, frameFetch: fetchResource });
+      const onprogress = event => {
+        if (LOGGED_EVENTS.has(event.type)) port.postMessage({ stage: event.type });
+      };
+      const page = await getPageData({ ...OPTIONS, onprogress }, { fetch: fetchResource, frameFetch: fetchResource });
       const html = stripSecrets(page.content);
       for (let i = 0; i < html.length; i += CHUNK_CHARS) {
         port.postMessage({ chunk: html.slice(i, i + CHUNK_CHARS) });
@@ -66,6 +74,8 @@ chrome.runtime.onConnect.addListener(port => {
       port.postMessage({ done: true, title: document.title });
     } catch (error) {
       port.postMessage({ error: String(error?.message ?? error) });
+    } finally {
+      clearInterval(heartbeat);
     }
   });
 });

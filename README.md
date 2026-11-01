@@ -7,16 +7,18 @@ Chrome/Brave extension: one click saves the page as you see it, including pages 
 Requires a Cloudflare account with R2 enabled.
 
 ```bash
-npm install
-npx wrangler login
-npx wrangler r2 bucket create quickshare
+pnpm install
+pnpm exec wrangler login
+pnpm exec wrangler r2 bucket create quickshare
 openssl rand -hex 32        # your upload token
-npx wrangler secret put UPLOAD_TOKEN --config worker/wrangler.toml
-npm run worker:deploy
-npm run build
+pnpm exec wrangler secret put UPLOAD_TOKEN --config worker/wrangler.toml
+pnpm run worker:deploy
+pnpm run build
 ```
 
 Open `chrome://extensions` (or `brave://extensions`), enable Developer mode, choose **Load unpacked** and pick `extension/`. In the extension options enter the Worker URL and the token. Shortcut: `Alt+Shift+S`.
+
+Keep Site access in the extension details on **On all sites**. With "On click" the page is captured, but images and styles from other domains cannot be fetched and go missing.
 
 ## Custom domain
 
@@ -39,12 +41,12 @@ curl -X DELETE -H "Authorization: Bearer $TOKEN" https://your-worker/<id>
 To expire snapshots automatically, add a lifecycle rule to the bucket:
 
 ```bash
-npx wrangler r2 bucket lifecycle add quickshare expire --expire-days 30
+pnpm exec wrangler r2 bucket lifecycle add quickshare expire-90-days --prefix "" --expire-days 90 --force
 ```
 
 ## Development
 
-`npm test` builds the extension and runs an end-to-end test against local `wrangler dev`.
+`pnpm test` builds the extension and runs an end-to-end test against local `wrangler dev`.
 
 ## License
 
