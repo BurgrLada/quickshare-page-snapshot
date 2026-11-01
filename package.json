@@ -1,0 +1,19 @@
+{
+  "name": "quickshare-page-snapshot",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "build": "node build.mjs",
+    "worker:dev": "wrangler dev --config worker/wrangler.toml --port 8799",
+    "worker:deploy": "wrangler deploy --config worker/wrangler.toml",
+    "test": "node build.mjs && node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "pngjs": "^7.0.0",
+    "puppeteer": "^25.16.0",
+    "single-file-core": "^1.8.0",
+    "wrangler": "^4.156.0"
+  }
+}

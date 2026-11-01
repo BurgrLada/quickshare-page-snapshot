@@ -1,0 +1,6 @@
+node_modules/
+extension/lib/
+.wrangler/
+.dev.vars
+worker/.dev.vars
+worker/.wrangler/

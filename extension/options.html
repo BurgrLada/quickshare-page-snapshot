@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>QuickShare Page Snapshot</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 16px; min-width: 360px; }
+  label { display: block; margin-bottom: 12px; }
+  input { display: block; width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 4px; }
+  #status { margin-left: 8px; }
+</style>
+<form id="form">
+  <label>Worker URL <input id="endpoint" type="url" required placeholder="https://share.example.com"></label>
+  <label>Token <input id="token" type="password" required></label>
+  <button>Save</button><span id="status" role="status"></span>
+</form>
+<script type="module" src="options.js"></script>
+</html>
